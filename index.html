@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0">
+        <title>Train Information</title>
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            table, th, td {
+                border: 1px solid black;
+                padding: 8px;
+                text-align: left;
+            }
+
+            th {
+                background-color: #f2f2f2;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Ticket Information</h2>
+        <span>Number:</span><span id="ticketNumber">1098190611</span>
+        <h2>Train Information</h2>
+        <form id="trainForm">
+            <label for="gt">AdvertisedTimeAtLocation GT:</label>
+            <input type="datetime-local"
+                   id="gt"
+                   name="gt"
+                   required>
+            <br><br>
+            <label for="lt">AdvertisedTimeAtLocation LT:</label>
+            <input type="datetime-local"
+                   id="lt"
+                   name="lt"
+                   required>
+            <br><br>
+            <label for="cancelled">Cancelled:</label>
+            <input type="checkbox"
+                   id="cancelled"
+                   name="cancelled">
+            <br><br>
+            <button type="button"
+                    onclick="fetchTrainData()">Get Train Data
+            </button>
+        </form>
+        <br>
+        <h2>Uppsala Train Information</h2>
+        <table id="trainTable">
+            <thead>
+                <tr>
+                    <th>Departure</th>
+                    <th>To</th>
+                    <th>Track</th>
+                    <th>Train</th>
+                    <th>Information</th>
+                    <th>Submitted</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>Stockholm Central Train Information</h2>
+        <table id="stockholmTrainTable">
+            <thead>
+                <tr>
+                    <th>Departure</th>
+                    <th>To</th>
+                    <th>Track</th>
+                    <th>Train</th>
+                    <th>Information</th>
+                    <th>Submitted</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>Gävle Train Information</h2>
+        <table id="gavleTrainTable">
+            <thead>
+                <tr>
+                    <th>Departure</th>
+                    <th>To</th>
+                    <th>Track</th>
+                    <th>Train</th>
+                    <th>Information</th>
+                    <th>Submitted</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <script>
+            async function fetchTrainData() {
+                let gt = document.getElementById("gt").value;
+                let lt = document.getElementById("lt").value;
+
+                if (!gt) {
+                    const lastMonth = new Date();
+                    lastMonth.setMonth(lastMonth.getMonth() - 1);
+                    gt = lastMonth.toISOString().slice(0, 16); // Format as 'YYYY-MM-DDTHH:MM'
+                }
+
+                if (!lt) {
+                    lt = new Date().toISOString().slice(0, 16); // Format as 'YYYY-MM-DDTHH:MM'
+                }
+                const cancelled = document.getElementById("cancelled").checked;
+
+                const uppsalaRequestBody = `
+                <REQUEST>
+                    <LOGIN authenticationkey='707695ca4c704c93a80ebf62cf9af7b5'/>
+                    <QUERY lastmodified='true' orderby='AdvertisedTimeAtLocation,EstimatedTimeAtLocation' objecttype='TrainAnnouncement' schemaversion='1.6' includedeletedobjects='false' sseurl='true'>
+                        <FILTER>
+                            <AND>
+                                <EQ name='LocationSignature' value='U'/>
+                                <EQ name='Advertised' value='true'/>
+                                <EQ name='ActivityType' value='Avgang'/>
+                                <EQ name='Canceled' value='${cancelled}'/>
+                                <EQ name='InformationOwner' value='Mälardalstrafik AB'/>
+                                <EQ name='TrainOwner' value='MÄLAB'/>
+                                <OR>
+                                    <AND>
+                                        <GT name='AdvertisedTimeAtLocation' value='${gt}'/>
+                                        <LT name='AdvertisedTimeAtLocation' value='${lt}'/>
+                                    </AND>
+                                    <GT name='EstimatedTimeAtLocation' value='${new Date().toISOString()}'/>
+                                </OR>
+                            </AND>
+                        </FILTER>
+                    </QUERY>
+                </REQUEST>`;
+
+                const stockholmRequestBody = `
+                <REQUEST>
+                    <LOGIN authenticationkey='707695ca4c704c93a80ebf62cf9af7b5'/>
+                    <QUERY lastmodified='true' orderby='AdvertisedTimeAtLocation,EstimatedTimeAtLocation' objecttype='TrainAnnouncement' schemaversion='1.6' includedeletedobjects='false' sseurl='true'>
+                        <FILTER>
+                            <AND>
+                                <EQ name='LocationSignature' value='Cst'/>
+                                <EQ name='Advertised' value='true'/>
+                                <EQ name='ActivityType' value='Avgang'/>
+                                <EQ name='Canceled' value='${cancelled}'/>
+                                <EQ name='InformationOwner' value='Mälardalstrafik AB'/>
+                                <EQ name='TrainOwner' value='MÄLAB'/>
+                                <OR>
+                                    <AND>
+                                        <GT name='AdvertisedTimeAtLocation' value='${gt}'/>
+                                        <LT name='AdvertisedTimeAtLocation' value='${lt}'/>
+                                    </AND>
+                                    <GT name='EstimatedTimeAtLocation' value='${new Date().toISOString()}'/>
+                                </OR>
+                            </AND>
+                        </FILTER>
+                    </QUERY>
+                </REQUEST>`;
+
+                const gavleRequestBody = `
+                <REQUEST>
+                    <LOGIN authenticationkey='707695ca4c704c93a80ebf62cf9af7b5'/>
+                    <QUERY lastmodified='true' orderby='AdvertisedTimeAtLocation,EstimatedTimeAtLocation' objecttype='TrainAnnouncement' schemaversion='1.6' includedeletedobjects='false' sseurl='true'>
+                        <FILTER>
+                            <AND>
+                                <EQ name='LocationSignature' value='Gä'/>
+                                <EQ name='Advertised' value='true'/>
+                                <EQ name='ActivityType' value='Avgang'/>
+                                <EQ name='Canceled' value='${cancelled}'/>
+                                <EQ name='InformationOwner' value='Mälardalstrafik AB'/>
+                                <EQ name='TrainOwner' value='MÄLAB'/>
+                                <OR>
+                                    <AND>
+                                        <GT name='AdvertisedTimeAtLocation' value='${gt}'/>
+                                        <LT name='AdvertisedTimeAtLocation' value='${lt}'/>
+                                    </AND>
+                                    <GT name='EstimatedTimeAtLocation' value='${new Date().toISOString()}'/>
+                                </OR>
+                            </AND>
+                        </FILTER>
+                    </QUERY>
+                </REQUEST>`;
+
+                try {
+                    const [uppsalaResponse, stockholmResponse, gavleResponse] = await Promise.all([
+                        fetch("https://api.trafikinfo.trafikverket.se/v2/data.json", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/xml"
+                            },
+                            body: uppsalaRequestBody
+                        }),
+                        fetch("https://api.trafikinfo.trafikverket.se/v2/data.json", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/xml"
+                            },
+                            body: stockholmRequestBody
+                        }),
+                        fetch("https://api.trafikinfo.trafikverket.se/v2/data.json", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/xml"
+                            },
+                            body: gavleRequestBody
+                        })
+                    ]);
+
+                    const [uppsalaData, stockholmData, gavleData] = await Promise.all([
+                        uppsalaResponse.json(),
+                        stockholmResponse.json(),
+                        gavleResponse.json()
+                    ]);
+
+                    displayData(uppsalaData.RESPONSE.RESULT[0].TrainAnnouncement, "trainTable");
+                    displayData(stockholmData.RESPONSE.RESULT[0].TrainAnnouncement, "stockholmTrainTable");
+                    displayData(gavleData.RESPONSE.RESULT[0].TrainAnnouncement, "gavleTrainTable");
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                }
+            }
+
+            const locationMap = {
+                "U": "Uppsala",
+                "Öb": "Örebro",
+                "Arnc": "Arlanda C",
+                "Cst": "Stockholm C",
+                "Et": "Eskilstuna",
+                "Arb": "Arboga",
+                "Sl": "Sala",
+                "Hy": "Hallsberg",
+                "Må": "Märsta",
+                "Söö": "Södertälje",
+                "Sgs": "Söderhamn",
+                "Vå": "Västerås",
+                "Ksus": "Kungsör",
+                "Tip": "Tierp",
+                "Srv": "Storvreta",
+                "Vha": "Vattholma",
+                "Syt": "Skyttorp",
+                "Öh": "Öryhus",
+                "Kn": "Knivsta",
+                "Mr": "Märsta",
+                "Gä": "Gävle"
+            };
+
+            function getLocationName(code) {
+                return locationMap[code] || code;
+            }
+
+            const informationMap = {
+                "Inställt": "Cancelled",
+                "Buss ersätter": "Bus replacement",
+                "Hpl E3": "Stop E3"
+            };
+
+            function getInformationText(info) {
+                return informationMap[info] || info;
+            }
+
+            function displayData(trains, tableId) {
+                const table = document.getElementById(tableId);
+                if (!table) {
+                    console.error(`Table with ID ${tableId} not found`);
+                    return;
+                }
+
+                const tbody = table.querySelector("tbody");
+                if (!tbody) {
+                    console.error(`Tbody not found in table with ID ${tableId}`);
+                    return;
+                }
+
+                // Load existing data from localStorage
+                const existingData = JSON.parse(localStorage.getItem(tableId)) || [];
+
+                // Retrieve filter values
+                const cancelled = document.getElementById("cancelled").checked;
+                const gt = document.getElementById("gt").value;
+                const lt = document.getElementById("lt").value;
+
+                // Merge server data with localStorage data, ensuring uniqueness
+                const mergedData = [...existingData];
+
+                trains.forEach(train => {
+                    const newRow = {
+                        departure: new Date(train.AdvertisedTimeAtLocation).toLocaleString('en-GB', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        }),
+                        to: `${getLocationName(train.ToLocation[0].LocationName)} [${train.ViaToLocation ? train.ViaToLocation.map(loc => getLocationName(loc.LocationName)).join(", ") : "N/A"}]`,
+                        track: train.TrackAtLocation || "N/A",
+                        train: train.AdvertisedTrainIdent,
+                        information: train.Deviation ? train.Deviation.map(dev => getInformationText(dev.Description)).join(", ") : "N/A",
+                        submitted: false // Default value for new rows
+                    };
+
+                    const isDuplicate = mergedData.some(existingRow =>
+                        existingRow.departure === newRow.departure && existingRow.train === newRow.train
+                    );
+
+                    if (!isDuplicate) {
+                        mergedData.push(newRow);
+                    }
+                });
+
+                // Persist unfiltered merged data to localStorage
+                localStorage.setItem(tableId, JSON.stringify(mergedData));
+                console.log(`Data for table ${tableId} persisted to localStorage`);
+
+                // Filter data for display based on the filters
+                const filteredData = mergedData.filter(row => {
+                    const rowDate = new Date(row.departure);
+                    const isCancelled = row.information.includes("Cancelled");
+                    const isWithinDateRange = (!gt || rowDate >= new Date(gt)) && (!lt || rowDate <= new Date(lt));
+                    return (!cancelled || isCancelled) && isWithinDateRange;
+                });
+
+                // Sort filtered data by departure time in ascending order
+                filteredData.sort((a, b) => new Date(b.departure) - new Date(a.departure));
+
+                // Clear previous data
+                tbody.innerHTML = "";
+
+                // Display filtered and sorted data
+                filteredData.forEach(rowData => {
+                    const row = tbody.insertRow();
+                    row.insertCell().textContent = rowData.departure;
+                    row.insertCell().textContent = rowData.to;
+                    row.insertCell().textContent = rowData.track;
+                    const link = document.createElement('a');
+                    link.href = `https://www.trafikverket.se/trafikinformation/tag/?Train=${rowData.train}`;
+                    link.textContent = rowData.train;
+                    link.target = '_blank';
+                    row.insertCell().appendChild(link);
+                    row.insertCell().textContent = rowData.information;
+
+                    // Add checkbox for "Submitted" column
+                    const checkboxCell = row.insertCell();
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = rowData.submitted;
+                    checkbox.addEventListener('change', () => {
+                        rowData.submitted = checkbox.checked;
+                        localStorage.setItem(tableId, JSON.stringify(mergedData));
+                    });
+                    checkboxCell.appendChild(checkbox);
+                });
+            }
+        </script>
+    </body>
+</html>
