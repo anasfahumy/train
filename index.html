@@ -297,7 +297,8 @@
                         track: train.TrackAtLocation || "N/A",
                         train: train.AdvertisedTrainIdent,
                         information: train.Deviation ? train.Deviation.map(dev => getInformationText(dev.Description)).join(", ") : "N/A",
-                        submitted: false // Default value for new rows
+                        submitted: false, // Default value for new rows
+                        date: new Date(train.AdvertisedTimeAtLocation)
                     };
 
                     const isDuplicate = mergedData.some(existingRow =>
@@ -315,14 +316,15 @@
 
                 // Filter data for display based on the filters
                 const filteredData = mergedData.filter(row => {
-                    const rowDate = new Date(row.departure);
+                    const rowDate = new Date(row.date);
+                    console.log(rowDate + ' and ' + row.date );
                     const isCancelled = row.information.includes("Cancelled");
                     const isWithinDateRange = (!gt || rowDate >= new Date(gt)) && (!lt || rowDate <= new Date(lt));
                     return (!cancelled || isCancelled) && isWithinDateRange;
                 });
 
                 // Sort filtered data by departure time in ascending order
-                filteredData.sort((a, b) => new Date(b.departure) - new Date(a.departure));
+                filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 // Clear previous data
                 tbody.innerHTML = "";
